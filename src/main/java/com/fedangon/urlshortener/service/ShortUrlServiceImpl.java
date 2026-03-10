@@ -4,11 +4,11 @@ import com.fedangon.urlshortener.entity.ShortUrl;
 import com.fedangon.urlshortener.exception.ShortUrlExpiredException;
 import com.fedangon.urlshortener.exception.ShortUrlNotFoundException;
 import com.fedangon.urlshortener.repository.ShortUrlRepository;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.fedangon.urlshortener.util.ShortCodeGenerator;
 
 /**
  * Implementação da regra de negócio de encurtamento de URL.
@@ -18,12 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ShortUrlServiceImpl implements ShortUrlService {
 
-    private static final String SHORT_CODE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static final int SHORT_CODE_LENGTH = 8;
     private static final int SHORT_CODE_MAX_ATTEMPTS = 20;
 
     private final ShortUrlRepository shortUrlRepository;
-    private final SecureRandom secureRandom = new SecureRandom();
 
     @Override
     @Transactional
@@ -84,24 +81,12 @@ public class ShortUrlServiceImpl implements ShortUrlService {
      */
     private String generateUniqueShortCode() {
         for (int attempt = 0; attempt < SHORT_CODE_MAX_ATTEMPTS; attempt++) {
-            String shortCode = generateRandomShortCode();
+            String shortCode = ShortCodeGenerator.generate();
             if (shortUrlRepository.findByShortCode(shortCode).isEmpty()) {
                 return shortCode;
             }
         }
         throw new IllegalStateException("Unable to generate a unique short code");
-    }
-
-    /**
-     * Gera um código alfanumérico no tamanho definido para URL encurtada.
-     */
-    private String generateRandomShortCode() {
-        StringBuilder codeBuilder = new StringBuilder(SHORT_CODE_LENGTH);
-        for (int index = 0; index < SHORT_CODE_LENGTH; index++) {
-            int randomIndex = secureRandom.nextInt(SHORT_CODE_CHARACTERS.length());
-            codeBuilder.append(SHORT_CODE_CHARACTERS.charAt(randomIndex));
-        }
-        return codeBuilder.toString();
     }
 
     /**
