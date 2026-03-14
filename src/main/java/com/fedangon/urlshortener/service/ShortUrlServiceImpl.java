@@ -4,11 +4,14 @@ import com.fedangon.urlshortener.entity.ShortUrl;
 import com.fedangon.urlshortener.exception.ShortUrlExpiredException;
 import com.fedangon.urlshortener.exception.ShortUrlNotFoundException;
 import com.fedangon.urlshortener.repository.ShortUrlRepository;
-import java.time.LocalDateTime;
+import com.fedangon.urlshortener.util.ShortCodeGenerator;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.fedangon.urlshortener.util.ShortCodeGenerator;
+
+import java.time.LocalDateTime;
 
 /**
  * Implementação da regra de negócio de encurtamento de URL.
@@ -22,17 +25,19 @@ public class ShortUrlServiceImpl implements ShortUrlService {
 
     private final ShortUrlRepository shortUrlRepository;
 
+    private static final Logger logger = LogManager.getLogger(ShortUrlService.class);
+
     @Override
     @Transactional
     public ShortUrl createShortUrl(String originalUrl, LocalDateTime expiresAt) {
         String sanitizedOriginalUrl = validateOriginalUrl(originalUrl);
-
+        logger.info("Iniciando criação de URL curta para: {}", originalUrl);
         ShortUrl shortUrl = ShortUrl.builder()
                 .originalUrl(sanitizedOriginalUrl)
                 .shortCode(generateUniqueShortCode())
                 .expiresAt(expiresAt)
                 .build();
-
+        logger.info("Processo de encurtamento executado");
         return shortUrlRepository.save(shortUrl);
     }
 
