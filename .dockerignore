@@ -1,0 +1,6 @@
+# Evita enviar lixo para o build context e melhora performance do docker build.
+target
+.git
+.idea
+*.iml
+**/.DS_Store

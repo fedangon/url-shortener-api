@@ -1,0 +1,50 @@
+#
+# docker-compose.yml com dois servicos:
+# - db: PostgreSQL para persistencia
+# - api: Spring Boot que se conecta usando variaveis de ambiente
+#
+# Para subir:
+#   docker compose up --build
+#
+services:
+  db:
+    image: postgres:16
+    container_name: url_shortener_db
+    # Variaveis padrao do Postgres para criar usuario e banco ao iniciar.
+    environment:
+      POSTGRES_DB: url_shortener
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: pass123
+    ports:
+      # Expondo a porta para facilitar acesso local (psql/IDE).
+      - "5432:5432"
+    volumes:
+      # Volume para persistir dados entre reinicios do container.
+      - url_shortener_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Garante que o Compose saiba quando o banco esta pronto.
+      test: ["CMD-SHELL", "pg_isready -U postgres -d url_shortener"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: url_shortener_api
+    depends_on:
+      # Espera o banco ficar saudavel antes de iniciar a API.
+      db:
+        condition: service_healthy
+    environment:
+      # Spring Boot entende estas variaveis automaticamente (Spring config binding).
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/url_shortener
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: pass123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      # API exposta em http://localhost:8080
+      - "8080:8080"
+volumes:
+  url_shortener_pgdata:
